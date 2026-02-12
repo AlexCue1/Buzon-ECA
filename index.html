@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buzón de Sugerencias - ECA</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+body{
+    display:flex;
+    min-height:100vh;
+    background:#f4f4f4;
+}
+
+/* PANEL IZQUIERDO */
+.sidebar{
+    width:35%;
+    background:#b30000;
+    color:white;
+    padding:40px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+}
+
+.sidebar h1{
+    font-size:48px;
+    margin-bottom:10px;
+}
+
+.sidebar h2{
+    font-size:20px;
+    margin-top:20px;
+}
+
+.sidebar p{
+    font-size:15px;
+    margin-top:10px;
+    line-height:1.6;
+}
+
+/* BOTÓN ADMIN */
+.admin-section{
+    margin-top:30px;
+}
+
+.admin-section button{
+    padding:10px;
+    border:none;
+    background:black;
+    color:white;
+    cursor:pointer;
+}
+
+/* CONTENIDO DERECHO */
+.content{
+    width:65%;
+    padding:30px;
+    overflow-y:auto;
+}
+
+/* HERO */
+.hero{
+    background:url('https://images.unsplash.com/photo-1523240795612-9a054b0db644') center/cover;
+    height:220px;
+    border-radius:10px;
+    color:white;
+    display:flex;
+    align-items:center;
+    padding:20px;
+    margin-bottom:30px;
+    position:relative;
+}
+
+.hero::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    border-radius:10px;
+}
+
+.hero-text{
+    position:relative;
+    z-index:1;
+}
+
+.hero h2{
+    font-size:28px;
+}
+
+/* FORM */
+textarea{
+    width:100%;
+    padding:10px;
+    margin:10px 0;
+    resize:none;
+}
+
+button{
+    padding:8px 12px;
+    cursor:pointer;
+}
+
+/* TARJETAS */
+.comment-card{
+    background:white;
+    padding:15px;
+    border-radius:10px;
+    margin-top:15px;
+    box-shadow:0 3px 6px rgba(0,0,0,0.1);
+}
+
+.admin-btn{
+    background:#b30000;
+    color:white;
+    border:none;
+}
+
+.edit-btn{
+    background:#333;
+    color:white;
+    border:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+    <div>
+        <h1>ECA</h1>
+        <h2>Buzón Institucional</h2>
+
+        <h2>Misión</h2>
+        <p>
+            Formar estudiantes íntegros, responsables y comprometidos con su comunidad,
+            promoviendo valores, excelencia académica y participación activa
+            para el desarrollo personal y social.
+        </p>
+    </div>
+
+    <div class="admin-section">
+        <p>Panel administrativo</p>
+        <button onclick="adminLogin()">Ingresar</button>
+    </div>
+</div>
+
+<div class="content">
+
+    <div class="hero">
+        <div class="hero-text">
+            <h2>Buzón de Sugerencias ECA</h2>
+            <p>Tu opinión fortalece nuestra institución</p>
+        </div>
+    </div>
+
+    <textarea id="commentInput" rows="4" placeholder="Escribe tu sugerencia..."></textarea>
+    <button onclick="addComment()">Enviar</button>
+
+    <div id="comments"></div>
+
+</div>
+
+<script>
+let comments = JSON.parse(localStorage.getItem("comments")) || [];
+let isAdmin = false;
+
+function saveComments(){
+    localStorage.setItem("comments", JSON.stringify(comments));
+}
+
+function addComment(){
+    const text = document.getElementById("commentInput").value.trim();
+    if(text === "") return;
+
+    const newComment = {
+        id: Date.now(),
+        text: text,
+        time: Date.now()
+    };
+
+    comments.unshift(newComment);
+    saveComments();
+    document.getElementById("commentInput").value = "";
+    renderComments();
+}
+
+function renderComments(){
+    const container = document.getElementById("comments");
+    container.innerHTML = "";
+
+    comments.forEach(comment => {
+
+        const div = document.createElement("div");
+        div.className = "comment-card";
+
+        const timePassed = (Date.now() - comment.time) / 1000;
+
+        div.innerHTML = `
+            <p>${comment.text}</p>
+            ${timePassed <= 60 ? `<button class="edit-btn" onclick="editComment(${comment.id})">Editar</button>` : ""}
+            ${isAdmin ? `<button class="admin-btn" onclick="deleteComment(${comment.id})">Borrar</button>` : ""}
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+function editComment(id){
+    const comment = comments.find(c => c.id === id);
+    const timePassed = (Date.now() - comment.time) / 1000;
+
+    if(timePassed > 60){
+        alert("El tiempo para editar ha expirado.");
+        return;
+    }
+
+    const newText = prompt("Editar comentario:", comment.text);
+    if(newText && newText.trim() !== ""){
+        comment.text = newText.trim();
+        saveComments();
+        renderComments();
+    }
+}
+
+function deleteComment(id){
+    comments = comments.filter(c => c.id !== id);
+    saveComments();
+    renderComments();
+}
+
+function adminLogin(){
+    const password = prompt("Ingrese contraseña:");
+    if(password === "eca2026"){
+        isAdmin = true;
+        alert("Modo administrador activado");
+        renderComments();
+    } else {
+        alert("Contraseña incorrecta");
+    }
+}
+
+renderComments();
+</script>
+
+</body>
+</html>
